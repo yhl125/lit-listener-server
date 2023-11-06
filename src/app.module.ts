@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { CircuitViemModule } from './circuit-viem/circuit-viem.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       isGlobal: true,
     }),
     EventEmitterModule.forRoot(),
+    CircuitViemModule,
   ],
   controllers: [AppController],
   providers: [AppService],
