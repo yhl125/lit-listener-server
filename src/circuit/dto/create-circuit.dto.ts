@@ -1,25 +1,39 @@
-import { AuthSig, LIT_NETWORKS_KEYS, SessionSigs } from '@lit-protocol/types';
 import {
+  WebhookCondition,
+  ViemContractCondition,
+  ViemEventCondition,
   IConditionalLogic,
   IExecutionConstraints,
   FetchActionViemTransaction,
   ViemTransactionAction,
-  ViemContractCondition,
-  ViemEventCondition,
-  WebhookCondition,
+  FetchActionZeroDevUserOperation,
+  ZeroDevUserOperationAction,
 } from '@lit-listener-sdk/types';
+import ObjectID from 'bson-objectid';
 
-export class CreateCircuitViemDto {
+export class CreateCircuitDto {
+  _id: ObjectID;
+
   name?: string;
+
   description?: string;
-  litNetwork: LIT_NETWORKS_KEYS;
+
+  type: 'viem' | 'zerodev';
+
   pkpPubKey: string;
+
   conditions: (WebhookCondition | ViemContractCondition | ViemEventCondition) &
     { name?: string; description?: string }[];
+
   conditionalLogic: IConditionalLogic;
+
   options: IExecutionConstraints;
-  actions: (FetchActionViemTransaction | ViemTransactionAction) &
+
+  actions: (
+    | FetchActionViemTransaction
+    | ViemTransactionAction
+    | FetchActionZeroDevUserOperation
+    | ZeroDevUserOperationAction
+  ) &
     { name?: string; description?: string }[];
-  authSig?: AuthSig;
-  sessionSigs?: SessionSigs;
 }

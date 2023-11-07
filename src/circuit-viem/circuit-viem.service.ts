@@ -1,30 +1,142 @@
 import { Injectable } from '@nestjs/common';
 import { CircuitViem } from '@lit-listener-sdk/circuit-viem';
 import { CreateCircuitViemDto } from './dto/create-circuit-viem.dto';
-import { UpdateCircuitViemDto } from './dto/update-circuit-viem.dto';
+import {
+  FetchActionViemTransaction,
+  ICheckWhenConditionMetLog,
+  ICircuitLog,
+  IConditionLog,
+  ITransactionLog,
+  ViemContractCondition,
+  ViemEventCondition,
+  ViemTransactionAction,
+  WebhookCondition,
+} from '@lit-listener-sdk/types';
+import ObjectID from 'bson-objectid';
+import { CircuitService } from 'src/circuit/circuit.service';
+// import { AuthSig, SessionSigs } from '@lit-protocol/types';
+// import { validateAuthSig, validateSessionSigs } from 'src/utils';
 
 @Injectable()
 export class CircuitViemService {
-  create(createCircuitViemDto: CreateCircuitViemDto) {
-    const circuit = new CircuitViem(createCircuitViemDto);
+  constructor(private circuitService: CircuitService) {}
+
+  private activeCircuits = new Map<ObjectID, CircuitViem>();
+  async create(createCircuitViemDto: CreateCircuitViemDto) {
+    const circuit = this.createCircuitViemWithDto(createCircuitViemDto);
+    const circuitModel = await this.createCircuitModel(
+      circuit.id,
+      createCircuitViemDto,
+    );
+    circuit.on('circuitLog', (log: ICircuitLog) => {
+      console.log('circuitLog', log);
+    });
+    circuit.on('conditionLog', (log: IConditionLog) => {
+      console.log('conditionLog', log);
+    });
+    circuit.on('checkWhenConditionMetLog', (log: ICheckWhenConditionMetLog) => {
+      console.log('checkWhenConditionMetLog', log);
+    });
+    circuit.on('transactionLog', (log: ITransactionLog) => {
+      console.log('transactionLog', log);
+    });
     circuit.start();
-
-    return 'circuitViem created';
+    this.activeCircuits.set(circuit.id, circuit);
+    return circuitModel;
   }
 
-  findAll() {
-    return `This action returns all circuitViem`;
+  private createCircuitViemWithDto(createCircuitViemDto: CreateCircuitViemDto) {
+    return new CircuitViem({
+      litNetwork: createCircuitViemDto.litNetwork,
+      pkpPubKey: createCircuitViemDto.pkpPubKey,
+      conditions: createCircuitViemDto.conditions.map(
+        (
+          condition: (
+            | WebhookCondition
+            | ViemContractCondition
+            | ViemEventCondition
+          ) & {
+            name?: string;
+            description?: string;
+          },
+        ) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { name, description, ...rest } = condition;
+          return rest;
+        },
+      ),
+      conditionalLogic: createCircuitViemDto.conditionalLogic,
+      options: createCircuitViemDto.options,
+      actions: createCircuitViemDto.actions.map(
+        (
+          action: (FetchActionViemTransaction | ViemTransactionAction) & {
+            name?: string;
+            description?: string;
+          },
+        ) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { name, description, ...rest } = action;
+          return rest;
+        },
+      ),
+      authSig: createCircuitViemDto.authSig,
+      sessionSigs: createCircuitViemDto.sessionSigs,
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} circuitViem`;
+  private createCircuitModel(
+    id: ObjectID,
+    createCircuitViemDto: CreateCircuitViemDto,
+  ) {
+    return this.circuitService.create({
+      _id: id,
+      name: createCircuitViemDto.name,
+      description: createCircuitViemDto.description,
+      type: 'viem',
+      pkpPubKey: createCircuitViemDto.pkpPubKey,
+      conditions: createCircuitViemDto.conditions,
+      conditionalLogic: createCircuitViemDto.conditionalLogic,
+      options: createCircuitViemDto.options,
+      actions: createCircuitViemDto.actions,
+    });
   }
 
-  update(id: number, updateCircuitViemDto: UpdateCircuitViemDto) {
-    return `This action updates a #${id} circuitViem`;
-  }
+  // async updateSessionSigs(id: ObjectID, sessionSigs: SessionSigs) {
+  //   const circuit = this.activeCircuits.get(id);
+  //   if (!circuit) {
+  //     throw new Error('Circuit not found');
+  //   }
+  //   const valid = await validateSessionSigs(circuit.pkpPubKey, sessionSigs);
+  //   if (!valid) {
+  //     throw new Error('Invalid SessionSigs');
+  //   }
+  //   circuit.updateSessionSigs(sessionSigs);
+  //   return 'SessionSigs updated';
+  // }
 
-  remove(id: number) {
-    return `This action removes a #${id} circuitViem`;
-  }
+  // async stopCircuitWithSessionSig(id: ObjectID, sessionSigs: SessionSigs) {
+  //   const circuit = this.activeCircuits.get(id);
+  //   if (!circuit) {
+  //     throw new Error('Circuit not found');
+  //   }
+  //   const valid = await validateSessionSigs(circuit.pkpPubKey, sessionSigs);
+  //   if (!valid) {
+  //     throw new Error('Invalid SessionSigs');
+  //   }
+  //   circuit.terminate();
+  //   return this.activeCircuits.delete(id);
+  // }
+
+  // async stopCircuitWithAuthSig(id: ObjectID, authSig: AuthSig) {
+  //   const circuit = this.activeCircuits.get(id);
+  //   if (!circuit) {
+  //     throw new Error('Circuit not found');
+  //   }
+  //   const valid = await validateAuthSig(circuit.pkpPubKey, authSig);
+  //   if (!valid) {
+  //     throw new Error('Invalid SessionSigs');
+  //   }
+  //   circuit.terminate();
+  //   return this.activeCircuits.delete(id);
+  // }
 }
