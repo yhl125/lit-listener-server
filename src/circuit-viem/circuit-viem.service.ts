@@ -14,8 +14,8 @@ import {
 } from '@lit-listener-sdk/types';
 import ObjectID from 'bson-objectid';
 import { CircuitService } from 'src/circuit/circuit.service';
-// import { AuthSig, SessionSigs } from '@lit-protocol/types';
-// import { validateAuthSig, validateSessionSigs } from 'src/utils';
+import { AuthSig, SessionSigs } from '@lit-protocol/types';
+import { validateAuthSig, validateSessionSigs } from 'src/utils';
 
 @Injectable()
 export class CircuitViemService {
@@ -101,42 +101,42 @@ export class CircuitViemService {
     });
   }
 
-  // async updateSessionSigs(id: ObjectID, sessionSigs: SessionSigs) {
-  //   const circuit = this.activeCircuits.get(id);
-  //   if (!circuit) {
-  //     throw new Error('Circuit not found');
-  //   }
-  //   const valid = await validateSessionSigs(circuit.pkpPubKey, sessionSigs);
-  //   if (!valid) {
-  //     throw new Error('Invalid SessionSigs');
-  //   }
-  //   circuit.updateSessionSigs(sessionSigs);
-  //   return 'SessionSigs updated';
-  // }
+  async updateSessionSigs(id: ObjectID, sessionSigs: SessionSigs) {
+    const circuit = this.activeCircuits.get(id);
+    if (!circuit) {
+      throw new Error('Circuit not found');
+    }
+    const valid = await validateSessionSigs(circuit.pkpPubKey, sessionSigs);
+    if (!valid) {
+      throw new Error('Invalid SessionSigs');
+    }
+    circuit.updateSessionSigs(sessionSigs);
+    return 'SessionSigs updated';
+  }
 
-  // async stopCircuitWithSessionSig(id: ObjectID, sessionSigs: SessionSigs) {
-  //   const circuit = this.activeCircuits.get(id);
-  //   if (!circuit) {
-  //     throw new Error('Circuit not found');
-  //   }
-  //   const valid = await validateSessionSigs(circuit.pkpPubKey, sessionSigs);
-  //   if (!valid) {
-  //     throw new Error('Invalid SessionSigs');
-  //   }
-  //   circuit.terminate();
-  //   return this.activeCircuits.delete(id);
-  // }
+  async stopCircuitWithSessionSig(id: ObjectID, sessionSigs: SessionSigs) {
+    const circuit = this.activeCircuits.get(id);
+    if (!circuit) {
+      throw new Error('Circuit not found');
+    }
+    const valid = await validateSessionSigs(circuit.pkpPubKey, sessionSigs);
+    if (!valid) {
+      throw new Error('Invalid SessionSigs');
+    }
+    circuit.terminate();
+    return this.activeCircuits.delete(id);
+  }
 
-  // async stopCircuitWithAuthSig(id: ObjectID, authSig: AuthSig) {
-  //   const circuit = this.activeCircuits.get(id);
-  //   if (!circuit) {
-  //     throw new Error('Circuit not found');
-  //   }
-  //   const valid = await validateAuthSig(circuit.pkpPubKey, authSig);
-  //   if (!valid) {
-  //     throw new Error('Invalid SessionSigs');
-  //   }
-  //   circuit.terminate();
-  //   return this.activeCircuits.delete(id);
-  // }
+  async stopCircuitWithAuthSig(id: ObjectID, authSig: AuthSig) {
+    const circuit = this.activeCircuits.get(id);
+    if (!circuit) {
+      throw new Error('Circuit not found');
+    }
+    const valid = await validateAuthSig(circuit.pkpPubKey, authSig);
+    if (!valid) {
+      throw new Error('Invalid SessionSigs');
+    }
+    circuit.terminate();
+    return this.activeCircuits.delete(id);
+  }
 }
