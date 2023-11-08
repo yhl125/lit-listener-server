@@ -12,7 +12,7 @@ import {
 } from '@lit-listener-sdk/types';
 import { ObjectId } from 'bson';
 import { isEmpty, validateAuthSig, validateSessionSigs } from 'src/utils';
-import { RemoveCircuitDto } from './dto/remove-circuit.dto';
+import { ValidateCircuitDto } from './dto/validate-circuit.dto';
 
 @Injectable()
 export class CircuitService {
@@ -89,7 +89,7 @@ export class CircuitService {
     return this.circuitModel.updateOne({ _id: id }, { $set: { status } });
   }
 
-  async remove(id: string, body: RemoveCircuitDto) {
+  async remove(id: string, body: ValidateCircuitDto) {
     // authSig or sessionSigs should be provided and not empty
     if (
       (!body.authSig || isEmpty(body.authSig)) &&

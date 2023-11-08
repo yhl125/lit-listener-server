@@ -1,7 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { CircuitViemService } from './circuit-viem.service';
 import { CreateCircuitViemDto } from './dto/create-circuit-viem.dto';
-import { UpdateCircuitViemDto } from './dto/update-circuit-viem.dto';
+import { ValidateCircuitDto } from 'src/circuit/dto/validate-circuit.dto';
+import { SessionSigsDto } from 'src/circuit/dto/session-sigs.dto';
 
 @Controller('circuit-viem')
 export class CircuitViemController {
@@ -12,23 +21,27 @@ export class CircuitViemController {
     return this.circuitViemService.create(createCircuitViemDto);
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.circuitViemService.findAll();
-  // }
+  @Patch('session-sigs/:id')
+  updateSessionSigs(
+    @Param('id') id: string,
+    @Body() sessionSigs: SessionSigsDto,
+  ) {
+    return this.circuitViemService.updateSessionSigs(id, sessionSigs);
+  }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.circuitViemService.findOne(+id);
-  // }
+  @Patch('session-sigs/pkp-pub-key/:key')
+  updateSessionSigsByPkpPubKey(
+    @Param('key') key: string,
+    @Body() sessionSigs: SessionSigsDto,
+  ) {
+    return this.circuitViemService.updateSessionSigsByPkpPubKey(
+      key,
+      sessionSigs,
+    );
+  }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateCircuitViemDto: UpdateCircuitViemDto) {
-  //   return this.circuitViemService.update(+id, updateCircuitViemDto);
-  // }
-
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.circuitViemService.remove(+id);
-  // }
+  @Post('stop/:id')
+  stop(@Param('id') id: string, @Body() body: ValidateCircuitDto) {
+    return this.circuitViemService.stop(id, body);
+  }
 }

@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { CircuitService } from './circuit.service';
-import { RemoveCircuitDto } from './dto/remove-circuit.dto';
+import { ValidateCircuitDto } from './dto/validate-circuit.dto';
 
 @Controller('circuit')
 export class CircuitController {
@@ -38,7 +38,7 @@ export class CircuitController {
   }
 
   @Post('remove/:id')
-  remove(@Param('id') id: string, @Body() body: RemoveCircuitDto) {
+  remove(@Param('id') id: string, @Body() body: ValidateCircuitDto) {
     return this.circuitService.remove(id, body);
   }
 }

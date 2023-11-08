@@ -15,7 +15,9 @@ import {
 import { ObjectId } from 'bson';
 import { CircuitService } from 'src/circuit/circuit.service';
 import { AuthSig, SessionSigs } from '@lit-protocol/types';
-import { validateAuthSig, validateSessionSigs } from 'src/utils';
+import { isEmpty, validateAuthSig, validateSessionSigs } from 'src/utils';
+import { ValidateCircuitDto } from 'src/circuit/dto/validate-circuit.dto';
+import { SessionSigsDto } from 'src/circuit/dto/session-sigs.dto';
 
 @Injectable()
 export class CircuitViemService implements OnModuleDestroy {
@@ -113,20 +115,46 @@ export class CircuitViemService implements OnModuleDestroy {
     });
   }
 
-  async updateSessionSigs(id: ObjectId, sessionSigs: SessionSigs) {
-    const circuit = this.activeCircuits.get(id);
+  async updateSessionSigs(id: string, sessionSigsDto: SessionSigsDto) {
+    const circuit = this.activeCircuits.get(new ObjectId(id));
     if (!circuit) {
       throw new Error('Circuit not found');
     }
-    const valid = await validateSessionSigs(circuit.pkpPubKey, sessionSigs);
+    const valid = await validateSessionSigs(
+      circuit.pkpPubKey,
+      sessionSigsDto.sessionSigs,
+    );
     if (!valid) {
       throw new Error('Invalid SessionSigs');
     }
-    circuit.updateSessionSigs(sessionSigs);
+    circuit.updateSessionSigs(sessionSigsDto.sessionSigs);
     return 'SessionSigs updated';
   }
 
-  async stopCircuitWithSessionSig(id: ObjectId, sessionSigs: SessionSigs) {
+  async updateSessionSigsByPkpPubKey(
+    pkpPubKey: string,
+    sessionSigsDto: SessionSigsDto,
+  ) {
+    const valid = await validateSessionSigs(
+      pkpPubKey,
+      sessionSigsDto.sessionSigs,
+    );
+    if (!valid) {
+      throw new Error('Invalid SessionSigs');
+    }
+    this.activeCircuits.forEach((circuit) => {
+      if (circuit.pkpPubKey === pkpPubKey) {
+        circuit.updateSessionSigs(sessionSigsDto.sessionSigs);
+      }
+    });
+
+    return 'SessionSigs updated';
+  }
+
+  private async stopCircuitWithSessionSig(
+    id: ObjectId,
+    sessionSigs: SessionSigs,
+  ) {
     const circuit = this.activeCircuits.get(id);
     if (!circuit) {
       throw new Error('Circuit not found');
@@ -139,7 +167,7 @@ export class CircuitViemService implements OnModuleDestroy {
     return this.activeCircuits.delete(id);
   }
 
-  async stopCircuitWithAuthSig(id: ObjectId, authSig: AuthSig) {
+  private async stopCircuitWithAuthSig(id: ObjectId, authSig: AuthSig) {
     const circuit = this.activeCircuits.get(id);
     if (!circuit) {
       throw new Error('Circuit not found');
@@ -150,5 +178,15 @@ export class CircuitViemService implements OnModuleDestroy {
     }
     circuit.terminate();
     return this.activeCircuits.delete(id);
+  }
+
+  stop(id: string, body: ValidateCircuitDto) {
+    if (body.authSig && !isEmpty(body.authSig)) {
+      return this.stopCircuitWithAuthSig(new ObjectId(id), body.authSig);
+    }
+    if (body.sessionSigs && !isEmpty(body.sessionSigs)) {
+      return this.stopCircuitWithSessionSig(new ObjectId(id), body.sessionSigs);
+    }
+    throw new Error('Invalid body');
   }
 }
