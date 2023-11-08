@@ -25,7 +25,7 @@ export class CircuitViemService implements OnModuleDestroy {
   async onModuleDestroy() {
     await Promise.all(
       Array.from(this.activeCircuits.keys()).map((id) =>
-        this.circuitService.updateStatus(id, 'server down while running'),
+        this.circuitService.updateStatus(id, 'server-down-stopped'),
       ),
     );
   }

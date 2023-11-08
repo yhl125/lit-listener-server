@@ -2,7 +2,6 @@ import { Model } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreateCircuitDto } from './dto/create-circuit.dto';
-import { UpdateCircuitDto } from './dto/update-circuit.dto';
 import { Circuit } from './schemas/circuit.schema';
 import {
   ICheckWhenConditionMetLog,
@@ -12,6 +11,8 @@ import {
   IUserOperationLog,
 } from '@lit-listener-sdk/types';
 import { ObjectId } from 'bson';
+import { isEmpty, validateAuthSig, validateSessionSigs } from 'src/utils';
+import { RemoveCircuitDto } from './dto/remove-circuit.dto';
 
 @Injectable()
 export class CircuitService {
@@ -23,23 +24,35 @@ export class CircuitService {
     return this.circuitModel.create(createCircuitDto);
   }
 
-  findAll() {
-    return `This action returns all circuit`;
-  }
-
   findById(id: string) {
     return this.circuitModel.findById(id);
   }
 
+  findByPkpPubKey(pkpPubKey: string) {
+    return this.circuitModel.find({ pkpPubKey: pkpPubKey });
+  }
+
+  findByPkpPubKeyWithStatus(status: string, pkpPubKey: string) {
+    return this.circuitModel.find({ pkpPubKey: pkpPubKey, status: status });
+  }
+
+  countByPkpPubKey(pkpPubKey: string) {
+    return this.circuitModel.count({ pkpPubKey: pkpPubKey });
+  }
+
+  countByPkpPubKeyWithStatus(status: string, pkpPubKey: string) {
+    return this.circuitModel.count({ pkpPubKey: pkpPubKey, status: status });
+  }
+
   async addCircuitLog(id: ObjectId, log: ICircuitLog) {
-    await this.circuitModel.updateOne(
+    return this.circuitModel.updateOne(
       { _id: id },
       { $push: { circuitLogs: log } },
     );
   }
 
   async addConditionLog(id: ObjectId, log: IConditionLog) {
-    await this.circuitModel.updateOne(
+    return this.circuitModel.updateOne(
       { _id: id },
       { $push: { conditionLogs: log } },
     );
@@ -49,21 +62,21 @@ export class CircuitService {
     id: ObjectId,
     log: ICheckWhenConditionMetLog,
   ) {
-    await this.circuitModel.updateOne(
+    return this.circuitModel.updateOne(
       { _id: id },
       { $push: { checkWhenConditionMetLogs: log } },
     );
   }
 
   async addTransactionLog(id: ObjectId, log: ITransactionLog) {
-    await this.circuitModel.updateOne(
+    return this.circuitModel.updateOne(
       { _id: id },
       { $push: { transactionLogs: log } },
     );
   }
 
   async addUserOperationLog(id: ObjectId, log: IUserOperationLog) {
-    await this.circuitModel.updateOne(
+    return this.circuitModel.updateOne(
       { _id: id },
       { $push: { userOperationLogs: log } },
     );
@@ -71,16 +84,35 @@ export class CircuitService {
 
   async updateStatus(
     id: ObjectId,
-    status: 'running' | 'stopped' | 'server down while running',
+    status: 'running' | 'stopped' | 'server-down-stopped',
   ) {
-    return await this.circuitModel.updateOne({ _id: id }, { $set: { status } });
+    return this.circuitModel.updateOne({ _id: id }, { $set: { status } });
   }
 
-  update(id: number, updateCircuitDto: UpdateCircuitDto) {
-    return `This action updates a #${id} circuit`;
-  }
-
-  remove(id: string) {
-    return this.circuitModel.findByIdAndRemove(id);
+  async remove(id: string, body: RemoveCircuitDto) {
+    // authSig or sessionSigs should be provided and not empty
+    if (
+      (!body.authSig || isEmpty(body.authSig)) &&
+      (!body.sessionSigs || isEmpty(body.sessionSigs))
+    ) {
+      throw new Error('Must provide either authSig or sessionSigs');
+    }
+    const circuit = await this.findById(id);
+    if (circuit.status === 'running') {
+      throw new Error('Cannot remove a running circuit');
+    }
+    if (body.sessionSigs && !isEmpty(body.sessionSigs)) {
+      const valid = validateSessionSigs(circuit.pkpPubKey, body.sessionSigs);
+      if (!valid) {
+        throw new Error('Invalid sessionSigs');
+      }
+      return this.circuitModel.deleteOne({ _id: id });
+    } else {
+      const valid = validateAuthSig(circuit.pkpPubKey, body.authSig);
+      if (!valid) {
+        throw new Error('Invalid authSig');
+      }
+      return this.circuitModel.deleteOne({ _id: id });
+    }
   }
 }

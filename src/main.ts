@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({ maxParamLength: 200 }),
   );
   const configService = app.get(ConfigService);
   const corsOrigin = configService.get<string>('FRONTEND_URLS').split(', ');
