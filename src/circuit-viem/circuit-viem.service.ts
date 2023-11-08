@@ -38,6 +38,13 @@ export class CircuitViemService implements OnModuleDestroy {
       circuit.id,
       createCircuitViemDto,
     );
+    this.listenToCircuitEvents(circuit);
+    circuit.start();
+    this.activeCircuits.set(circuit.id, circuit);
+    return circuitModel;
+  }
+
+  private listenToCircuitEvents(circuit: CircuitViem) {
     circuit.on('circuitLog', (log: ICircuitLog) => {
       this.circuitService.addCircuitLog(circuit.id, log);
       if (log.status === 'stop') {
@@ -54,44 +61,69 @@ export class CircuitViemService implements OnModuleDestroy {
     circuit.on('transactionLog', (log: ITransactionLog) => {
       this.circuitService.addTransactionLog(circuit.id, log);
     });
-    circuit.start();
-    this.activeCircuits.set(circuit.id, circuit);
-    return circuitModel;
+  }
+
+  private removeNameAndDescriptionFromConditions(
+    conditions: (
+      | WebhookCondition
+      | ViemContractCondition
+      | ViemEventCondition
+    ) &
+      {
+        name?: string;
+        description?: string;
+      }[],
+  ): (WebhookCondition | ViemContractCondition | ViemEventCondition)[] {
+    return conditions.map(
+      (
+        condition: (
+          | WebhookCondition
+          | ViemContractCondition
+          | ViemEventCondition
+        ) & {
+          name?: string;
+          description?: string;
+        },
+      ) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { name, description, ...rest } = condition;
+        return rest;
+      },
+    );
+  }
+
+  private removeNameAndDescriptionFromActions(
+    actions: (FetchActionViemTransaction | ViemTransactionAction) &
+      {
+        name?: string;
+        description?: string;
+      }[],
+  ): (FetchActionViemTransaction | ViemTransactionAction)[] {
+    return actions.map(
+      (
+        action: (FetchActionViemTransaction | ViemTransactionAction) & {
+          name?: string;
+          description?: string;
+        },
+      ) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { name, description, ...rest } = action;
+        return rest;
+      },
+    );
   }
 
   private createCircuitViemWithDto(createCircuitViemDto: CreateCircuitViemDto) {
     return new CircuitViem({
       litNetwork: createCircuitViemDto.litNetwork,
       pkpPubKey: createCircuitViemDto.pkpPubKey,
-      conditions: createCircuitViemDto.conditions.map(
-        (
-          condition: (
-            | WebhookCondition
-            | ViemContractCondition
-            | ViemEventCondition
-          ) & {
-            name?: string;
-            description?: string;
-          },
-        ) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { name, description, ...rest } = condition;
-          return rest;
-        },
+      conditions: this.removeNameAndDescriptionFromConditions(
+        createCircuitViemDto.conditions,
       ),
       conditionalLogic: createCircuitViemDto.conditionalLogic,
       options: createCircuitViemDto.options,
-      actions: createCircuitViemDto.actions.map(
-        (
-          action: (FetchActionViemTransaction | ViemTransactionAction) & {
-            name?: string;
-            description?: string;
-          },
-        ) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { name, description, ...rest } = action;
-          return rest;
-        },
+      actions: this.removeNameAndDescriptionFromActions(
+        createCircuitViemDto.actions,
       ),
       authSig: createCircuitViemDto.authSig,
       sessionSigs: createCircuitViemDto.sessionSigs,
@@ -108,6 +140,7 @@ export class CircuitViemService implements OnModuleDestroy {
       description: createCircuitViemDto.description,
       type: 'viem',
       pkpPubKey: createCircuitViemDto.pkpPubKey,
+      litNetwork: createCircuitViemDto.litNetwork,
       conditions: createCircuitViemDto.conditions,
       conditionalLogic: createCircuitViemDto.conditionalLogic,
       options: createCircuitViemDto.options,
@@ -149,6 +182,80 @@ export class CircuitViemService implements OnModuleDestroy {
     });
 
     return 'SessionSigs updated';
+  }
+
+  async reactivateServerDownCircuit(id: string, body: ValidateCircuitDto) {
+    const circuit = await this.circuitService.findById(id);
+    if (!circuit) {
+      throw new Error('Circuit not found');
+    }
+    if (circuit.status !== 'server-down-stopped') {
+      throw new Error('Circuit is not server-down-stopped');
+    }
+    if (circuit.type !== 'viem') {
+      throw new Error('Circuit is not viem');
+    }
+    if (body.sessionSigs && !isEmpty(body.sessionSigs)) {
+      const newCircuit = new CircuitViem({
+        id: circuit._id,
+        litNetwork: circuit.litNetwork,
+        pkpPubKey: circuit.pkpPubKey,
+        conditions: this.removeNameAndDescriptionFromConditions(
+          circuit.conditions,
+        ),
+        conditionalLogic: circuit.conditionalLogic,
+        options: this.circuitService.adjustReactiveCircuitOptions(circuit),
+        actions: this.removeNameAndDescriptionFromActions(
+          circuit.actions as (
+            | FetchActionViemTransaction
+            | ViemTransactionAction
+          ) &
+            { name?: string; description?: string }[],
+        ),
+        sessionSigs: body.sessionSigs,
+      });
+
+      this.listenToCircuitEvents(newCircuit);
+      newCircuit.start();
+      this.activeCircuits.set(newCircuit.id, newCircuit);
+      await this.reactivatedCircuitLog(newCircuit.id);
+      return this.circuitService.updateStatus(newCircuit.id, 'running');
+    } else if (body.authSig && !isEmpty(body.authSig)) {
+      const newCircuit = new CircuitViem({
+        id: circuit._id,
+        litNetwork: circuit.litNetwork,
+        pkpPubKey: circuit.pkpPubKey,
+        conditions: this.removeNameAndDescriptionFromConditions(
+          circuit.conditions,
+        ),
+        conditionalLogic: circuit.conditionalLogic,
+        options: this.circuitService.adjustReactiveCircuitOptions(circuit),
+        actions: this.removeNameAndDescriptionFromActions(
+          circuit.actions as (
+            | FetchActionViemTransaction
+            | ViemTransactionAction
+          ) &
+            { name?: string; description?: string }[],
+        ),
+        authSig: body.authSig,
+      });
+
+      this.listenToCircuitEvents(newCircuit);
+      newCircuit.start();
+      this.activeCircuits.set(newCircuit.id, newCircuit);
+      await this.reactivatedCircuitLog(newCircuit.id);
+      return this.circuitService.updateStatus(newCircuit.id, 'running');
+    } else {
+      throw new Error('Invalid body');
+    }
+  }
+
+  private reactivatedCircuitLog(id: ObjectId) {
+    return this.circuitService.addCircuitLog(id, {
+      status: 'started',
+      message: 'reactivated server-down-stopped circuit',
+      isoDate: new Date().toISOString(),
+    });
   }
 
   private async stopCircuitWithSessionSig(

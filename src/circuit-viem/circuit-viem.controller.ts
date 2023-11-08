@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param } from '@nestjs/common';
 import { CircuitViemService } from './circuit-viem.service';
 import { CreateCircuitViemDto } from './dto/create-circuit-viem.dto';
 import { ValidateCircuitDto } from 'src/circuit/dto/validate-circuit.dto';
@@ -38,6 +30,14 @@ export class CircuitViemController {
       key,
       sessionSigs,
     );
+  }
+
+  @Post('reactivate-server-down-circuit/:id')
+  reactivateServerDownCircuit(
+    @Param('id') id: string,
+    @Body() body: ValidateCircuitDto,
+  ) {
+    return this.circuitViemService.reactivateServerDownCircuit(id, body);
   }
 
   @Post('stop/:id')

@@ -16,6 +16,7 @@ import {
 } from '@lit-listener-sdk/types';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
+import { LIT_NETWORKS_KEYS } from '@lit-protocol/types';
 
 export type CircuitDocument = HydratedDocument<Circuit>;
 
@@ -35,6 +36,9 @@ export class Circuit {
 
   @Prop()
   pkpPubKey: string;
+
+  @Prop()
+  litNetwork: LIT_NETWORKS_KEYS;
 
   @Prop({ type: MongooseSchema.Types.Array })
   conditions: (WebhookCondition | ViemContractCondition | ViemEventCondition) &

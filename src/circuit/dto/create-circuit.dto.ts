@@ -9,6 +9,7 @@ import {
   FetchActionZeroDevUserOperation,
   ZeroDevUserOperationAction,
 } from '@lit-listener-sdk/types';
+import { LIT_NETWORKS_KEYS } from '@lit-protocol/types';
 
 export class CreateCircuitDto {
   _id: string;
@@ -20,6 +21,8 @@ export class CreateCircuitDto {
   type: 'viem' | 'zerodev';
 
   pkpPubKey: string;
+
+  litNetwork: LIT_NETWORKS_KEYS;
 
   conditions: (WebhookCondition | ViemContractCondition | ViemEventCondition) &
     { name?: string; description?: string }[];

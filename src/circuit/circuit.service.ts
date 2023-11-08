@@ -115,4 +115,23 @@ export class CircuitService {
       return this.circuitModel.deleteOne({ _id: id });
     }
   }
+
+  adjustReactiveCircuitOptions(circuit: Circuit) {
+    const { options, circuitLogs, conditionLogs } = circuit;
+    if (options.maxLitActionCompletions) {
+      circuitLogs.forEach((log) => {
+        if (log.status === 'action complete') {
+          options.maxLitActionCompletions -= 1;
+        }
+      });
+    }
+    if (options.conditionMonitorExecutions) {
+      conditionLogs.forEach((log) => {
+        if (log.status === 'matched') {
+          options.conditionMonitorExecutions -= 1;
+        }
+      });
+    }
+    return options;
+  }
 }

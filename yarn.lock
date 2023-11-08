@@ -1267,29 +1267,29 @@
   resolved "https://registry.yarnpkg.com/@lit-labs/ssr-dom-shim/-/ssr-dom-shim-1.1.2.tgz#d693d972974a354034454ec1317eb6afd0b00312"
   integrity sha512-jnOD+/+dSrfTWYfSXBXlo5l5f0q1UuJo3tkbMDCYA2lKUYq79jaxqtGEvnRoh049nt1vdo1+45RinipU6FGY2g==
 
-"@lit-listener-sdk/circuit-base@^0.0.12":
-  version "0.0.12"
-  resolved "https://registry.yarnpkg.com/@lit-listener-sdk/circuit-base/-/circuit-base-0.0.12.tgz#fed2bd68f6e410f160017e70f7923ff4eb622a57"
-  integrity sha512-anSvGfFVHlI6DZrhKQm2fkd4LijEPl3x71DtcZsqHWHTvCc6TNSrPwRKdnmbJCfLPpoy/xDTcPJTQXxxq2+3RA==
+"@lit-listener-sdk/circuit-base@^0.0.14":
+  version "0.0.14"
+  resolved "https://registry.yarnpkg.com/@lit-listener-sdk/circuit-base/-/circuit-base-0.0.14.tgz#bbec10fe2b024af550d7ae7773eea18f1395b8ff"
+  integrity sha512-ivzVK8hBUG9jwGiIq4lUmOVjuOkklTNiYILXgJVKDk9LWzj5eONNSiA+xxD333WsKAOEOowlO1Iuo7l0dCrnRw==
 
-"@lit-listener-sdk/circuit-viem@^0.0.12":
-  version "0.0.12"
-  resolved "https://registry.yarnpkg.com/@lit-listener-sdk/circuit-viem/-/circuit-viem-0.0.12.tgz#f5636637b98ff6c897a991d7dd9e9a20f732d8ff"
-  integrity sha512-X77AlYJm8wNygh1jnx6gle0sv/nl2Qxrv4js+ME+AwrIp6LtnGZut9mN9ZKHHHyh/BscBMNfdKoiBNH4Kh/oKw==
+"@lit-listener-sdk/circuit-viem@^0.0.14":
+  version "0.0.14"
+  resolved "https://registry.yarnpkg.com/@lit-listener-sdk/circuit-viem/-/circuit-viem-0.0.14.tgz#c5d2659f3b4eb64b3b82f90fafc8996871d73ac6"
+  integrity sha512-TsR1wCEdV51NJtviR07dD4saeVkHHa00e2TMomYE4HR0yxP2ERDyjjMKAoM2JlzMCQhrShCwML8oN0zOfEnAtg==
   dependencies:
     tslib "^2.3.0"
 
-"@lit-listener-sdk/circuit-zerodev@^0.0.12":
-  version "0.0.12"
-  resolved "https://registry.yarnpkg.com/@lit-listener-sdk/circuit-zerodev/-/circuit-zerodev-0.0.12.tgz#f68e5a64da88bc2f09bc6aded4ae59e3047566c5"
-  integrity sha512-nfm76OZo/ScHCpwNsWDYp0BqpjrrxlqsXSZ4EZ8rtRdioVSdsOCT4SHgwRtbpWoWbQu/yfEiNKiEUnaopTMbtw==
+"@lit-listener-sdk/circuit-zerodev@^0.0.14":
+  version "0.0.14"
+  resolved "https://registry.yarnpkg.com/@lit-listener-sdk/circuit-zerodev/-/circuit-zerodev-0.0.14.tgz#f159fd005df15995a73924937849ea3d52b0448e"
+  integrity sha512-L/JlaAC01hfTNM6M4xEWYraL5p+Irb0OiTP44/VaojGEHBeMOKt/VPlPtFkeFRSVLcf12PYtM93RKJNSewhFyQ==
   dependencies:
     tslib "^2.3.0"
 
-"@lit-listener-sdk/types@^0.0.12":
-  version "0.0.12"
-  resolved "https://registry.yarnpkg.com/@lit-listener-sdk/types/-/types-0.0.12.tgz#8c1136932834ee358e02d56ce3db1c72b7c30cae"
-  integrity sha512-qpYuYsBHck6RDj/NXhC5tWfv6WL66RcJTAfTItbwEk+9Y64fYdwSDG4ebAJRzn1PoF/IqXnOy3nQt0dPXlnsnQ==
+"@lit-listener-sdk/types@^0.0.14":
+  version "0.0.14"
+  resolved "https://registry.yarnpkg.com/@lit-listener-sdk/types/-/types-0.0.14.tgz#2cbd9b1f8fd08be827d410d733aaef3771cbd754"
+  integrity sha512-RFd9eH5hKe3ezZch3JYbrid8VeVQzk6Q5nu3zxiF+/GD7EF2vh8tRwMPcC0Gw/qvHdJXvLDWtzgsYX0vZJ1jJw==
 
 "@lit-protocol/access-control-conditions@3.0.16":
   version "3.0.16"
