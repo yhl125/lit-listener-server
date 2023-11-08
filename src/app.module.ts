@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CircuitViemModule } from './circuit-viem/circuit-viem.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CircuitModule } from './circuit/circuit.module';
+import { CircuitZeroDevModule } from './circuit-zerodev/circuit-zerodev.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CircuitModule } from './circuit/circuit.module';
     }),
     CircuitViemModule,
     CircuitModule,
+    CircuitZeroDevModule,
   ],
   controllers: [AppController],
   providers: [AppService],
