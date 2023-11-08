@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { CircuitViem } from '@lit-listener-sdk/circuit-viem';
 import { CreateCircuitViemDto } from './dto/create-circuit-viem.dto';
 import {
@@ -12,16 +12,24 @@ import {
   ViemTransactionAction,
   WebhookCondition,
 } from '@lit-listener-sdk/types';
-import ObjectID from 'bson-objectid';
+import { ObjectId } from 'bson';
 import { CircuitService } from 'src/circuit/circuit.service';
 import { AuthSig, SessionSigs } from '@lit-protocol/types';
 import { validateAuthSig, validateSessionSigs } from 'src/utils';
 
 @Injectable()
-export class CircuitViemService {
+export class CircuitViemService implements OnModuleDestroy {
   constructor(private circuitService: CircuitService) {}
+  private activeCircuits = new Map<ObjectId, CircuitViem>();
 
-  private activeCircuits = new Map<ObjectID, CircuitViem>();
+  async onModuleDestroy() {
+    await Promise.all(
+      Array.from(this.activeCircuits.keys()).map((id) =>
+        this.circuitService.updateStatus(id, 'server down while running'),
+      ),
+    );
+  }
+
   async create(createCircuitViemDto: CreateCircuitViemDto) {
     const circuit = this.createCircuitViemWithDto(createCircuitViemDto);
     const circuitModel = await this.createCircuitModel(
@@ -29,16 +37,20 @@ export class CircuitViemService {
       createCircuitViemDto,
     );
     circuit.on('circuitLog', (log: ICircuitLog) => {
-      console.log('circuitLog', log);
+      this.circuitService.addCircuitLog(circuit.id, log);
+      if (log.status === 'stop') {
+        this.activeCircuits.delete(circuit.id);
+        this.circuitService.updateStatus(circuit.id, 'stopped');
+      }
     });
     circuit.on('conditionLog', (log: IConditionLog) => {
-      console.log('conditionLog', log);
+      this.circuitService.addConditionLog(circuit.id, log);
     });
     circuit.on('checkWhenConditionMetLog', (log: ICheckWhenConditionMetLog) => {
-      console.log('checkWhenConditionMetLog', log);
+      this.circuitService.addCheckWhenConditionMetLog(circuit.id, log);
     });
     circuit.on('transactionLog', (log: ITransactionLog) => {
-      console.log('transactionLog', log);
+      this.circuitService.addTransactionLog(circuit.id, log);
     });
     circuit.start();
     this.activeCircuits.set(circuit.id, circuit);
@@ -85,11 +97,11 @@ export class CircuitViemService {
   }
 
   private createCircuitModel(
-    id: ObjectID,
+    id: ObjectId,
     createCircuitViemDto: CreateCircuitViemDto,
   ) {
     return this.circuitService.create({
-      _id: id,
+      _id: id.toHexString(),
       name: createCircuitViemDto.name,
       description: createCircuitViemDto.description,
       type: 'viem',
@@ -101,7 +113,7 @@ export class CircuitViemService {
     });
   }
 
-  async updateSessionSigs(id: ObjectID, sessionSigs: SessionSigs) {
+  async updateSessionSigs(id: ObjectId, sessionSigs: SessionSigs) {
     const circuit = this.activeCircuits.get(id);
     if (!circuit) {
       throw new Error('Circuit not found');
@@ -114,7 +126,7 @@ export class CircuitViemService {
     return 'SessionSigs updated';
   }
 
-  async stopCircuitWithSessionSig(id: ObjectID, sessionSigs: SessionSigs) {
+  async stopCircuitWithSessionSig(id: ObjectId, sessionSigs: SessionSigs) {
     const circuit = this.activeCircuits.get(id);
     if (!circuit) {
       throw new Error('Circuit not found');
@@ -127,7 +139,7 @@ export class CircuitViemService {
     return this.activeCircuits.delete(id);
   }
 
-  async stopCircuitWithAuthSig(id: ObjectID, authSig: AuthSig) {
+  async stopCircuitWithAuthSig(id: ObjectId, authSig: AuthSig) {
     const circuit = this.activeCircuits.get(id);
     if (!circuit) {
       throw new Error('Circuit not found');

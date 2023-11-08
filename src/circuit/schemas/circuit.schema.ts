@@ -31,7 +31,7 @@ export class Circuit {
   type: 'viem' | 'zerodev';
 
   @Prop({ default: 'running' })
-  status: 'running' | 'stopped';
+  status: 'running' | 'stopped' | 'server down while running';
 
   @Prop()
   pkpPubKey: string;

@@ -9,10 +9,9 @@ import {
   FetchActionZeroDevUserOperation,
   ZeroDevUserOperationAction,
 } from '@lit-listener-sdk/types';
-import ObjectID from 'bson-objectid';
 
 export class CreateCircuitDto {
-  _id: ObjectID;
+  _id: string;
 
   name?: string;
 
