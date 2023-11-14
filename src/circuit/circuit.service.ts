@@ -9,6 +9,12 @@ import {
   IConditionLog,
   ITransactionLog,
   IUserOperationLog,
+  IViemContractCondition,
+  IViemEventCondition,
+  IWebhookCondition,
+  ViemContractCondition,
+  ViemEventCondition,
+  WebhookCondition,
 } from '@lit-listener-sdk/types';
 import { ObjectId } from 'bson';
 import { isEmpty, validateAuthSig, validateSessionSigs } from 'src/utils';
@@ -133,5 +139,40 @@ export class CircuitService {
       });
     }
     return options;
+  }
+
+  IConditionsToConditions(
+    conditions: (
+      | IWebhookCondition
+      | IViemContractCondition
+      | IViemEventCondition
+    ) &
+      {
+        name?: string;
+        description?: string;
+      }[],
+  ): (WebhookCondition | ViemContractCondition | ViemEventCondition)[] {
+    return conditions.map(
+      (
+        condition: (
+          | IWebhookCondition
+          | IViemContractCondition
+          | IViemEventCondition
+        ) & {
+          name?: string;
+          description?: string;
+        },
+      ) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { name, description, ...rest } = condition;
+        if (rest.type === 'webhook') {
+          return new WebhookCondition(rest);
+        } else if (rest.type === 'viem-contract') {
+          return new ViemContractCondition(rest);
+        } else if (rest.type === 'viem-event') {
+          return new ViemEventCondition(rest);
+        }
+      },
+    );
   }
 }

@@ -1,18 +1,18 @@
 import {
   IConditionalLogic,
   IExecutionConstraints,
-  ViemContractCondition,
-  ViemEventCondition,
-  WebhookCondition,
-  FetchActionViemTransaction,
-  FetchActionZeroDevUserOperation,
-  ViemTransactionAction,
-  ZeroDevUserOperationAction,
   ICircuitLog,
   ICheckWhenConditionMetLog,
   IConditionLog,
   ITransactionLog,
   IUserOperationLog,
+  IFetchActionViemTransaction,
+  IFetchActionZeroDevUserOperation,
+  IViemContractCondition,
+  IViemEventCondition,
+  IViemTransactionAction,
+  IWebhookCondition,
+  IZeroDevUserOperationAction,
 } from '@lit-listener-sdk/types';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
@@ -41,7 +41,11 @@ export class Circuit {
   litNetwork: LIT_NETWORKS_KEYS;
 
   @Prop({ type: MongooseSchema.Types.Array })
-  conditions: (WebhookCondition | ViemContractCondition | ViemEventCondition) &
+  conditions: (
+    | IWebhookCondition
+    | IViemContractCondition
+    | IViemEventCondition
+  ) &
     { name?: string; description?: string }[];
 
   @Prop({ type: MongooseSchema.Types.Map })
@@ -52,10 +56,10 @@ export class Circuit {
 
   @Prop({ type: MongooseSchema.Types.Array })
   actions: (
-    | FetchActionViemTransaction
-    | ViemTransactionAction
-    | FetchActionZeroDevUserOperation
-    | ZeroDevUserOperationAction
+    | IFetchActionViemTransaction
+    | IViemTransactionAction
+    | IFetchActionZeroDevUserOperation
+    | IZeroDevUserOperationAction
   ) &
     { name?: string; description?: string }[];
 

@@ -1,13 +1,13 @@
 import {
-  WebhookCondition,
-  ViemContractCondition,
-  ViemEventCondition,
   IConditionalLogic,
   IExecutionConstraints,
-  FetchActionViemTransaction,
-  ViemTransactionAction,
-  FetchActionZeroDevUserOperation,
-  ZeroDevUserOperationAction,
+  IFetchActionViemTransaction,
+  IFetchActionZeroDevUserOperation,
+  IViemContractCondition,
+  IViemEventCondition,
+  IViemTransactionAction,
+  IWebhookCondition,
+  IZeroDevUserOperationAction,
 } from '@lit-listener-sdk/types';
 import { LIT_NETWORKS_KEYS } from '@lit-protocol/types';
 
@@ -24,7 +24,11 @@ export class CreateCircuitDto {
 
   litNetwork: LIT_NETWORKS_KEYS;
 
-  conditions: (WebhookCondition | ViemContractCondition | ViemEventCondition) &
+  conditions: (
+    | IWebhookCondition
+    | IViemContractCondition
+    | IViemEventCondition
+  ) &
     { name?: string; description?: string }[];
 
   conditionalLogic: IConditionalLogic;
@@ -32,10 +36,10 @@ export class CreateCircuitDto {
   options: IExecutionConstraints;
 
   actions: (
-    | FetchActionViemTransaction
-    | ViemTransactionAction
-    | FetchActionZeroDevUserOperation
-    | ZeroDevUserOperationAction
+    | IFetchActionViemTransaction
+    | IViemTransactionAction
+    | IFetchActionZeroDevUserOperation
+    | IZeroDevUserOperationAction
   ) &
     { name?: string; description?: string }[];
 }

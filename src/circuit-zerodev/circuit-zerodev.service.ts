@@ -6,8 +6,13 @@ import {
   ICheckWhenConditionMetLog,
   ICircuitLog,
   IConditionLog,
+  IFetchActionZeroDevUserOperation,
   ITransactionLog,
   IUserOperationLog,
+  IViemContractCondition,
+  IViemEventCondition,
+  IWebhookCondition,
+  IZeroDevUserOperationAction,
   ViemContractCondition,
   ViemEventCondition,
   WebhookCondition,
@@ -34,7 +39,43 @@ export class CircuitZeroDevService implements OnModuleDestroy {
   }
 
   async create(createCircuitZeroDevDto: CreateCircuitZeroDevDto) {
-    const circuit = this.createCircuitZeroDevWithDto(createCircuitZeroDevDto);
+    const conditions = this.circuitService.IConditionsToConditions(
+      createCircuitZeroDevDto.conditions,
+    );
+    const actions = this.IActionsToActions(createCircuitZeroDevDto.actions);
+    const circuit = this.createCircuitZeroDevWithDto(
+      createCircuitZeroDevDto,
+      conditions,
+      actions,
+    );
+    // add id to createCircuitZeroDevDto.conditions from conditions
+    createCircuitZeroDevDto.conditions.forEach(
+      (
+        condition: (
+          | IWebhookCondition
+          | IViemContractCondition
+          | IViemEventCondition
+        ) & { name?: string; description?: string },
+        index,
+      ) => {
+        condition.id = conditions[index].id;
+      },
+    );
+    // add id to createCircuitZeroDevDto.actions from actions
+    createCircuitZeroDevDto.actions.forEach(
+      (
+        action: (
+          | IFetchActionZeroDevUserOperation
+          | IZeroDevUserOperationAction
+        ) & {
+          name?: string;
+          description?: string;
+        },
+        index,
+      ) => {
+        action.id = actions[index].id;
+      },
+    );
     const circuitModel = await this.createCircuitModel(
       circuit.id,
       createCircuitZeroDevDto,
@@ -67,37 +108,8 @@ export class CircuitZeroDevService implements OnModuleDestroy {
     });
   }
 
-  private removeNameAndDescriptionFromConditions(
-    conditions: (
-      | WebhookCondition
-      | ViemContractCondition
-      | ViemEventCondition
-    ) &
-      {
-        name?: string;
-        description?: string;
-      }[],
-  ): (WebhookCondition | ViemContractCondition | ViemEventCondition)[] {
-    return conditions.map(
-      (
-        condition: (
-          | WebhookCondition
-          | ViemContractCondition
-          | ViemEventCondition
-        ) & {
-          name?: string;
-          description?: string;
-        },
-      ) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { name, description, ...rest } = condition;
-        return rest;
-      },
-    );
-  }
-
-  private removeNameAndDescriptionFromActions(
-    actions: (FetchActionZeroDevUserOperation | ZeroDevUserOperationAction) &
+  private IActionsToActions(
+    actions: (IFetchActionZeroDevUserOperation | IZeroDevUserOperationAction) &
       {
         name?: string;
         description?: string;
@@ -106,8 +118,8 @@ export class CircuitZeroDevService implements OnModuleDestroy {
     return actions.map(
       (
         action: (
-          | FetchActionZeroDevUserOperation
-          | ZeroDevUserOperationAction
+          | IFetchActionZeroDevUserOperation
+          | IZeroDevUserOperationAction
         ) & {
           name?: string;
           description?: string;
@@ -115,25 +127,31 @@ export class CircuitZeroDevService implements OnModuleDestroy {
       ) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { name, description, ...rest } = action;
-        return rest;
+        if (rest.type === 'fetch-zerodev') {
+          return new FetchActionZeroDevUserOperation(rest);
+        } else if (rest.type === 'zerodev') {
+          return new ZeroDevUserOperationAction(rest);
+        }
       },
     );
   }
 
   private createCircuitZeroDevWithDto(
     createCircuitZeroDevDto: CreateCircuitZeroDevDto,
+    conditions: (
+      | WebhookCondition
+      | ViemContractCondition
+      | ViemEventCondition
+    )[],
+    actions: (FetchActionZeroDevUserOperation | ZeroDevUserOperationAction)[],
   ) {
     return new CircuitZeroDev({
       litNetwork: createCircuitZeroDevDto.litNetwork,
       pkpPubKey: createCircuitZeroDevDto.pkpPubKey,
-      conditions: this.removeNameAndDescriptionFromConditions(
-        createCircuitZeroDevDto.conditions,
-      ),
+      conditions: conditions,
       conditionalLogic: createCircuitZeroDevDto.conditionalLogic,
       options: createCircuitZeroDevDto.options,
-      actions: this.removeNameAndDescriptionFromActions(
-        createCircuitZeroDevDto.actions,
-      ),
+      actions: actions,
       authSig: createCircuitZeroDevDto.authSig,
       sessionSigs: createCircuitZeroDevDto.sessionSigs,
     });
@@ -209,15 +227,15 @@ export class CircuitZeroDevService implements OnModuleDestroy {
         id: circuit._id,
         litNetwork: circuit.litNetwork,
         pkpPubKey: circuit.pkpPubKey,
-        conditions: this.removeNameAndDescriptionFromConditions(
+        conditions: this.circuitService.IConditionsToConditions(
           circuit.conditions,
         ),
         conditionalLogic: circuit.conditionalLogic,
         options: this.circuitService.adjustReactiveCircuitOptions(circuit),
-        actions: this.removeNameAndDescriptionFromActions(
+        actions: this.IActionsToActions(
           circuit.actions as (
-            | FetchActionZeroDevUserOperation
-            | ZeroDevUserOperationAction
+            | IFetchActionZeroDevUserOperation
+            | IZeroDevUserOperationAction
           ) &
             { name?: string; description?: string }[],
         ),
@@ -234,15 +252,15 @@ export class CircuitZeroDevService implements OnModuleDestroy {
         id: circuit._id,
         litNetwork: circuit.litNetwork,
         pkpPubKey: circuit.pkpPubKey,
-        conditions: this.removeNameAndDescriptionFromConditions(
+        conditions: this.circuitService.IConditionsToConditions(
           circuit.conditions,
         ),
         conditionalLogic: circuit.conditionalLogic,
         options: this.circuitService.adjustReactiveCircuitOptions(circuit),
-        actions: this.removeNameAndDescriptionFromActions(
+        actions: this.IActionsToActions(
           circuit.actions as (
-            | FetchActionZeroDevUserOperation
-            | ZeroDevUserOperationAction
+            | IFetchActionZeroDevUserOperation
+            | IZeroDevUserOperationAction
           ) &
             { name?: string; description?: string }[],
         ),

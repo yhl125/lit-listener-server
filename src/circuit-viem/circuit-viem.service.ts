@@ -6,7 +6,12 @@ import {
   ICheckWhenConditionMetLog,
   ICircuitLog,
   IConditionLog,
+  IFetchActionViemTransaction,
   ITransactionLog,
+  IViemContractCondition,
+  IViemEventCondition,
+  IViemTransactionAction,
+  IWebhookCondition,
   ViemContractCondition,
   ViemEventCondition,
   ViemTransactionAction,
@@ -33,7 +38,40 @@ export class CircuitViemService implements OnModuleDestroy {
   }
 
   async create(createCircuitViemDto: CreateCircuitViemDto) {
-    const circuit = this.createCircuitViemWithDto(createCircuitViemDto);
+    const conditions = this.circuitService.IConditionsToConditions(
+      createCircuitViemDto.conditions,
+    );
+    const actions = this.IActionsToActions(createCircuitViemDto.actions);
+    const circuit = this.createCircuitViemWithDto(
+      createCircuitViemDto,
+      conditions,
+      actions,
+    );
+    // add id to createCircuitViemDto.conditions from conditions
+    createCircuitViemDto.conditions.forEach(
+      (
+        condition: (
+          | IWebhookCondition
+          | IViemContractCondition
+          | IViemEventCondition
+        ) & { name?: string; description?: string },
+        index,
+      ) => {
+        condition.id = conditions[index].id;
+      },
+    );
+    // add id to createCircuitViemDto.actions from actions
+    createCircuitViemDto.actions.forEach(
+      (
+        action: (IFetchActionViemTransaction | IViemTransactionAction) & {
+          name?: string;
+          description?: string;
+        },
+        index,
+      ) => {
+        action.id = actions[index].id;
+      },
+    );
     const circuitModel = await this.createCircuitModel(
       circuit.id,
       createCircuitViemDto,
@@ -63,68 +101,47 @@ export class CircuitViemService implements OnModuleDestroy {
     });
   }
 
-  private removeNameAndDescriptionFromConditions(
-    conditions: (
-      | WebhookCondition
-      | ViemContractCondition
-      | ViemEventCondition
-    ) &
-      {
-        name?: string;
-        description?: string;
-      }[],
-  ): (WebhookCondition | ViemContractCondition | ViemEventCondition)[] {
-    return conditions.map(
-      (
-        condition: (
-          | WebhookCondition
-          | ViemContractCondition
-          | ViemEventCondition
-        ) & {
-          name?: string;
-          description?: string;
-        },
-      ) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { name, description, ...rest } = condition;
-        return rest;
-      },
-    );
-  }
-
-  private removeNameAndDescriptionFromActions(
-    actions: (FetchActionViemTransaction | ViemTransactionAction) &
+  private IActionsToActions(
+    iActions: (IFetchActionViemTransaction | IViemTransactionAction) &
       {
         name?: string;
         description?: string;
       }[],
   ): (FetchActionViemTransaction | ViemTransactionAction)[] {
-    return actions.map(
+    return iActions.map(
       (
-        action: (FetchActionViemTransaction | ViemTransactionAction) & {
+        action: (IFetchActionViemTransaction | IViemTransactionAction) & {
           name?: string;
           description?: string;
         },
       ) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { name, description, ...rest } = action;
-        return rest;
+        if (rest.type === 'fetch-viem') {
+          return new FetchActionViemTransaction(rest);
+        } else if (rest.type === 'viem') {
+          return new ViemTransactionAction(rest);
+        }
       },
     );
   }
 
-  private createCircuitViemWithDto(createCircuitViemDto: CreateCircuitViemDto) {
+  private createCircuitViemWithDto(
+    createCircuitViemDto: CreateCircuitViemDto,
+    conditions: (
+      | WebhookCondition
+      | ViemContractCondition
+      | ViemEventCondition
+    )[],
+    actions: (FetchActionViemTransaction | ViemTransactionAction)[],
+  ) {
     return new CircuitViem({
       litNetwork: createCircuitViemDto.litNetwork,
       pkpPubKey: createCircuitViemDto.pkpPubKey,
-      conditions: this.removeNameAndDescriptionFromConditions(
-        createCircuitViemDto.conditions,
-      ),
+      conditions: conditions,
       conditionalLogic: createCircuitViemDto.conditionalLogic,
       options: createCircuitViemDto.options,
-      actions: this.removeNameAndDescriptionFromActions(
-        createCircuitViemDto.actions,
-      ),
+      actions: actions,
       authSig: createCircuitViemDto.authSig,
       sessionSigs: createCircuitViemDto.sessionSigs,
     });
@@ -200,15 +217,15 @@ export class CircuitViemService implements OnModuleDestroy {
         id: circuit._id,
         litNetwork: circuit.litNetwork,
         pkpPubKey: circuit.pkpPubKey,
-        conditions: this.removeNameAndDescriptionFromConditions(
+        conditions: this.circuitService.IConditionsToConditions(
           circuit.conditions,
         ),
         conditionalLogic: circuit.conditionalLogic,
         options: this.circuitService.adjustReactiveCircuitOptions(circuit),
-        actions: this.removeNameAndDescriptionFromActions(
+        actions: this.IActionsToActions(
           circuit.actions as (
-            | FetchActionViemTransaction
-            | ViemTransactionAction
+            | IFetchActionViemTransaction
+            | IViemTransactionAction
           ) &
             { name?: string; description?: string }[],
         ),
@@ -225,15 +242,15 @@ export class CircuitViemService implements OnModuleDestroy {
         id: circuit._id,
         litNetwork: circuit.litNetwork,
         pkpPubKey: circuit.pkpPubKey,
-        conditions: this.removeNameAndDescriptionFromConditions(
+        conditions: this.circuitService.IConditionsToConditions(
           circuit.conditions,
         ),
         conditionalLogic: circuit.conditionalLogic,
         options: this.circuitService.adjustReactiveCircuitOptions(circuit),
-        actions: this.removeNameAndDescriptionFromActions(
+        actions: this.IActionsToActions(
           circuit.actions as (
-            | FetchActionViemTransaction
-            | ViemTransactionAction
+            | IFetchActionViemTransaction
+            | IViemTransactionAction
           ) &
             { name?: string; description?: string }[],
         ),
