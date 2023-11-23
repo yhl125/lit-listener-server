@@ -188,6 +188,7 @@ export class CircuitZeroDevService implements OnModuleDestroy {
       throw new Error('Invalid SessionSigs');
     }
     circuit.updateSessionSigs(sessionSigsDto.sessionSigs);
+    this.activeCircuits.set(id, circuit);
     return 'SessionSigs updated';
   }
 
@@ -205,6 +206,7 @@ export class CircuitZeroDevService implements OnModuleDestroy {
     this.activeCircuits.forEach((circuit) => {
       if (circuit.pkpPubKey === pkpPubKey) {
         circuit.updateSessionSigs(sessionSigsDto.sessionSigs);
+        this.activeCircuits.set(circuit.id.toHexString(), circuit);
       }
     });
 
