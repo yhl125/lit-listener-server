@@ -27,7 +27,7 @@ import { SessionSigsDto } from 'src/circuit/dto/session-sigs.dto';
 @Injectable()
 export class CircuitViemService implements OnModuleDestroy {
   constructor(private circuitService: CircuitService) {}
-  private activeCircuits = new Map<ObjectId, CircuitViem>();
+  private activeCircuits = new Map<string, CircuitViem>();
 
   async onModuleDestroy() {
     await Promise.all(
@@ -78,7 +78,7 @@ export class CircuitViemService implements OnModuleDestroy {
     );
     this.listenToCircuitEvents(circuit);
     circuit.start();
-    this.activeCircuits.set(circuit.id, circuit);
+    this.activeCircuits.set(circuit.id.toHexString(), circuit);
     return circuitModel;
   }
 
@@ -86,8 +86,8 @@ export class CircuitViemService implements OnModuleDestroy {
     circuit.on('circuitLog', (log: ICircuitLog) => {
       this.circuitService.addCircuitLog(circuit.id, log);
       if (log.status === 'stop') {
-        this.activeCircuits.delete(circuit.id);
-        this.circuitService.updateStatus(circuit.id, 'stopped');
+        this.activeCircuits.delete(circuit.id.toHexString());
+        this.circuitService.updateStatus(circuit.id.toHexString(), 'stopped');
       }
     });
     circuit.on('conditionLog', (log: IConditionLog) => {
@@ -166,7 +166,7 @@ export class CircuitViemService implements OnModuleDestroy {
   }
 
   async updateSessionSigs(id: string, sessionSigsDto: SessionSigsDto) {
-    const circuit = this.activeCircuits.get(new ObjectId(id));
+    const circuit = this.activeCircuits.get(id);
     if (!circuit) {
       throw new Error('Circuit not found');
     }
@@ -234,9 +234,12 @@ export class CircuitViemService implements OnModuleDestroy {
 
       this.listenToCircuitEvents(newCircuit);
       newCircuit.start();
-      this.activeCircuits.set(newCircuit.id, newCircuit);
+      this.activeCircuits.set(newCircuit.id.toHexString(), newCircuit);
       await this.reactivatedCircuitLog(newCircuit.id);
-      return this.circuitService.updateStatus(newCircuit.id, 'running');
+      return this.circuitService.updateStatus(
+        newCircuit.id.toHexString(),
+        'running',
+      );
     } else if (body.authSig && !isEmpty(body.authSig)) {
       const newCircuit = new CircuitViem({
         id: circuit._id,
@@ -259,9 +262,12 @@ export class CircuitViemService implements OnModuleDestroy {
 
       this.listenToCircuitEvents(newCircuit);
       newCircuit.start();
-      this.activeCircuits.set(newCircuit.id, newCircuit);
+      this.activeCircuits.set(newCircuit.id.toHexString(), newCircuit);
       await this.reactivatedCircuitLog(newCircuit.id);
-      return this.circuitService.updateStatus(newCircuit.id, 'running');
+      return this.circuitService.updateStatus(
+        newCircuit.id.toHexString(),
+        'running',
+      );
     } else {
       throw new Error('Invalid body');
     }
@@ -276,7 +282,7 @@ export class CircuitViemService implements OnModuleDestroy {
   }
 
   private async stopCircuitWithSessionSig(
-    id: ObjectId,
+    id: string,
     sessionSigs: SessionSigs,
   ) {
     const circuit = this.activeCircuits.get(id);
@@ -291,7 +297,7 @@ export class CircuitViemService implements OnModuleDestroy {
     return this.activeCircuits.delete(id);
   }
 
-  private async stopCircuitWithAuthSig(id: ObjectId, authSig: AuthSig) {
+  private async stopCircuitWithAuthSig(id: string, authSig: AuthSig) {
     const circuit = this.activeCircuits.get(id);
     if (!circuit) {
       throw new Error('Circuit not found');
@@ -306,10 +312,10 @@ export class CircuitViemService implements OnModuleDestroy {
 
   stop(id: string, body: ValidateCircuitDto) {
     if (body.authSig && !isEmpty(body.authSig)) {
-      return this.stopCircuitWithAuthSig(new ObjectId(id), body.authSig);
+      return this.stopCircuitWithAuthSig(id, body.authSig);
     }
     if (body.sessionSigs && !isEmpty(body.sessionSigs)) {
-      return this.stopCircuitWithSessionSig(new ObjectId(id), body.sessionSigs);
+      return this.stopCircuitWithSessionSig(id, body.sessionSigs);
     }
     throw new Error('Invalid body');
   }

@@ -89,7 +89,7 @@ export class CircuitService {
   }
 
   async updateStatus(
-    id: ObjectId,
+    id: string,
     status: 'running' | 'stopped' | 'server-down-stopped',
   ) {
     return this.circuitModel.updateOne({ _id: id }, { $set: { status } });
